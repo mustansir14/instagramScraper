@@ -27,6 +27,6 @@ CREATE TABLE IF NOT EXISTS `post` (
   `date_updated` datetime DEFAULT NULL,
   `status` varchar(256) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `log` varchar(256) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  PRIMARY KEY (`id`),
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
