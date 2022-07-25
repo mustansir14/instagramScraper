@@ -7,6 +7,10 @@ from includes.models import *
 from includes.DB import DB
 from config import *
 from datetime import datetime
+from multiprocessing import Process, Queue
+import sys
+from sys import platform
+import argparse
 logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %H:%M:%S', level=logging.INFO)
 
 
@@ -138,14 +142,80 @@ class InstagramScraper:
                         f.write(res.content)
 
         post.status = "success"
-        return post 
+        return post
+
+
+    def bulk_scrape(self, urls, num_threads):
+
+        if platform == "linux" or platform == "linux2":
+            urls_to_scrape = Queue()
+            for url in urls:
+                urls_to_scrape.put(url)
+            processes = []
+            for i in range(num_threads):
+                processes.append(Process(target=self.scrape_urls_from_queue, args=(urls_to_scrape, )))
+                processes[i].start()
+
+            for i in range(num_threads):
+                processes[i].join()
+        else:
+            for url in urls:
+                self.scrape_url(url)
+    
+    
+    def scrape_urls_from_queue(self, q):
+
+        try:
+            scraper = InstagramScraper()
+            
+            while q.qsize():
+                company_url = q.get()
+                scraper.scrape_profile(company_url)   
+        except:
+            pass
 
 
 
 if __name__ == "__main__":
 
+    parser = argparse.ArgumentParser(description="InstagramScraper CLI to grab company and reviews from URL")
+    parser.add_argument("--bulk_scrape_urls_file", nargs='?', type=str, default=False, help="File to read urls for bulk scrape, one url per line.")
+    parser.add_argument("--urls", nargs='*', help="url(s) for scraping. Separate by spaces")
+    parser.add_argument("--no_of_threads", nargs='?', type=int, default=1, help="No of threads to run. Default 1")
+    parser.add_argument("--log_file", nargs='?', type=str, default=None, help="Path for log file. If not given, output will be printed on stdout.")
+    parser.add_argument("--grabber-instagram-mustansir", nargs='?', type=bool, default=False, help="Only mark to kill all")
+    if len(sys.argv) == 1:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
+    args = parser.parse_args()
+    # setup logging based on arguments
+    if args.log_file and platform == "linux" or platform == "linux2":
+        logging.basicConfig(filename=args.log_file, filemode='a',format='%(asctime)s Process ID %(process)d: %(message)s', datefmt='%m/%d/%Y %H:%M:%S', level=logging.INFO)
+    elif platform == "linux" or platform == "linux2":
+        logging.basicConfig(format='%(asctime)s Process ID %(process)d: %(message)s', datefmt='%m/%d/%Y %H:%M:%S', level=logging.INFO)
+    elif args.log_file:
+        logging.basicConfig(filename=args.log_file, filemode='a',format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %H:%M:%S', level=logging.INFO)
+    else:
+        logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %H:%M:%S', level=logging.INFO)
+
     scraper = InstagramScraper()
-    profile = scraper.scrape_profile("facebook")
-    print(profile)
+    if args.bulk_scrape_urls_file:
+        scraper.bulk_scrape(num_threads=args.no_of_threads)
+    else:
+        for url in args.urls:
+            profile = scraper.scrape_profile(url)
+            logging.info("Profile for %s scraped successfully.\n" % profile.username)
+            try:
+                print(profile)
+            except Exception as e:
+                print(e)
+            print("\n")
+            for i, post in enumerate(profile.posts, start=1):
+                print("Post# " + str(i))
+                try:
+                    print(post)
+                except Exception as e:
+                    print(e)
+                print("\n")
 
 
