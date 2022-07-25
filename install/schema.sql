@@ -28,7 +28,5 @@ CREATE TABLE IF NOT EXISTS `post` (
   `status` varchar(256) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `log` varchar(256) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `fk_post` (`username`),
-  CONSTRAINT `fk_post` FOREIGN KEY (`username`) REFERENCES `profile` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

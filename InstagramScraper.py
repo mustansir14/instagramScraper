@@ -11,6 +11,7 @@ from multiprocessing import Process, Queue
 import sys
 from sys import platform
 import argparse
+from includes.Reporter import Reporter
 logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %H:%M:%S', level=logging.INFO)
 
 
@@ -45,6 +46,8 @@ class InstagramScraper:
         os.makedirs(FILES_DIR.rstrip("/") + "/post/image", exist_ok=True)
         os.makedirs(FILES_DIR.rstrip("/") + "/post/video", exist_ok=True)
 
+        self.reporter = Reporter(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_IDS)
+
     def scrape_profile(self, profile_url) -> Profile:
 
         logging.info("Scraping Profile: " + profile_url)
@@ -52,35 +55,43 @@ class InstagramScraper:
         querystring = {"username":username}
         profile = Profile()
         profile.username = username
-        response = requests.get(self.url, headers=self.headers, params=querystring)
-        if response.status_code != 200:
-            profile.status = "error"
-            profile.log = str(response.status_code) + " Error requesting Instagram API: " + response.text
-            logging.error(profile.log)
-            return profile
-        user_json = response.json()["data"]["user"]
-        profile.username = username
-        profile.description = user_json["biography"]
-        profile.no_of_followers = user_json["edge_followed_by"]["count"]
-        profile.no_of_following = user_json["edge_follow"]["count"]
-        profile.no_of_posts = user_json["edge_owner_to_timeline_media"]["count"]
-        profile.category = user_json["category_name"]
-        profile.status = "success"
-        if self.use_db:
-            self.db.insert_or_update_profile(profile)
-        logging.info("Scraping Posts for " + profile_url)
-        edges = user_json["edge_felix_video_timeline"]["edges"] + user_json["edge_owner_to_timeline_media"]["edges"]
-        ids_done = []
-        for edge in edges:
-            if edge["node"]["id"] in ids_done:
-                continue
-            post = self.scrape_post(edge=edge)
-            profile.posts.append(post)
+        try:
+            response = requests.get(self.url, headers=self.headers, params=querystring)
+            if response.status_code != 200:
+                profile.status = "error"
+                profile.log = str(response.status_code) + " Error requesting Instagram API: " + response.text
+                logging.error(profile.log)
+                return profile
+            user_json = response.json()["data"]["user"]
+            profile.username = username
+            profile.description = user_json["biography"]
+            profile.no_of_followers = user_json["edge_followed_by"]["count"]
+            profile.no_of_following = user_json["edge_follow"]["count"]
+            profile.no_of_posts = user_json["edge_owner_to_timeline_media"]["count"]
+            profile.category = user_json["category_name"]
+            profile.status = "success"
             if self.use_db:
-                self.db.insert_or_update_post(post)
-            ids_done.append(post.id)
+                self.db.insert_or_update_profile(profile)
+            logging.info("Scraping Posts for " + profile_url)
+            edges = user_json["edge_felix_video_timeline"]["edges"] + user_json["edge_owner_to_timeline_media"]["edges"]
+            ids_done = []
+            for edge in edges:
+                if edge["node"]["id"] in ids_done:
+                    continue
+                post = self.scrape_post(edge=edge)
+                profile.posts.append(post)
+                if self.use_db:
+                    self.db.insert_or_update_post(post)
+                ids_done.append(post.id)
 
-        return profile
+            return profile
+        except Exception as e:
+            self.reporter.error(str(e))
+            logging.error(f"Error for profile {profile.username}:" + str(e))
+            profile.status = "error"
+            profile.log = str(e)
+            return profile
+
 
 
     def scrape_post(self, id=None, edge=None) -> Post:
@@ -160,7 +171,7 @@ class InstagramScraper:
                 processes[i].join()
         else:
             for url in urls:
-                self.scrape_url(url)
+                self.scrape_profile(url)
     
     
     def scrape_urls_from_queue(self, q):
@@ -200,7 +211,10 @@ if __name__ == "__main__":
 
     scraper = InstagramScraper()
     if args.bulk_scrape_urls_file:
-        scraper.bulk_scrape(num_threads=args.no_of_threads)
+        with open(args.bulk_scrape_urls_file, "r") as f:
+            urls = f.read()
+            urls = [x.strip() for x in urls.split("\n") if x.strip()]
+        scraper.bulk_scrape(urls, num_threads=args.no_of_threads)
     else:
         for url in args.urls:
             profile = scraper.scrape_profile(url)
