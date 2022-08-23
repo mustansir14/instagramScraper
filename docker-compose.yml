@@ -12,4 +12,4 @@ services:
               cpus: "2"
               memory: 2048M
         volumes:
-          - /www/grabber-instagram/files:/www/files
+          - /www/files/grabber-instagram:/www/files
