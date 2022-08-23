@@ -19,4 +19,4 @@ RUN apt-get update && \
 
 RUN pip3 install -r /www/install/requirements.txt
 
-CMD [ "python", "/www/api.py" ]
+CMD [ "python", "-u", "/www/api.py" ]
