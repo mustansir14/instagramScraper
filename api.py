@@ -19,7 +19,7 @@ def grab_company():
         return {"status": "success", "profile": vars(profile)}
     except Exception as e:
         logging.error(str(e))
-        return {"status": "error", "message": str(e)}
+        return {"status": "error", "message": str(e)}, 300
 
 @api.route('/api/v1/scrape/post', methods=['GET'])
 def grab_post():
@@ -33,8 +33,20 @@ def grab_post():
         return {"status": "success", "post": vars(post)}
     except Exception as e:
         logging.error(str(e))
-        return {"status": "error", "message": str(e)}
+        return {"status": "error", "message": str(e)}, 300
 
+@api.route('/api/v1/scrape/reels/<username>')
+def grab_reels(username):
+
+    try:
+        scraper = InstagramScraper()
+        profile = scraper.scrape_profile(username, get_only_reels=True)
+        for i in range(len(profile.posts)):
+            profile.posts[i] = vars(profile.posts[i])
+        return {"Status": "success", "reels": profile.posts}
+    except Exception as e:
+        logging.error(str(e))
+        return {"status": "error", "message": str(e)}, 300
 
 if __name__ == "__main__":
     api.run(host='0.0.0.0', port=80)

@@ -48,7 +48,7 @@ class InstagramScraper:
 
         self.reporter = Reporter(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_IDS)
 
-    def scrape_profile(self, profile_url) -> Profile:
+    def scrape_profile(self, profile_url, get_only_reels=False) -> Profile:
 
         logging.info("Scraping Profile: " + profile_url)
         username = profile_url.strip("/").split("/")[-1]
@@ -77,6 +77,8 @@ class InstagramScraper:
             ids_done = []
             for edge in edges:
                 if edge["node"]["id"] in ids_done:
+                    continue
+                if get_only_reels and edge["node"]["__typename"] != "GraphVideo":
                     continue
                 post = self.scrape_post(edge=edge)
                 profile.posts.append(post)
