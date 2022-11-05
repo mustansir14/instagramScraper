@@ -69,6 +69,7 @@ class InstagramScraper:
             profile.no_of_following = user_json["edge_follow"]["count"]
             profile.no_of_posts = user_json["edge_owner_to_timeline_media"]["count"]
             profile.category = user_json["category_name"]
+            profile.web = user_json["external_url"]
             profile.status = "success"
             if self.use_db:
                 self.db.insert_or_update_profile(profile)

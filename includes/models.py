@@ -7,6 +7,7 @@ class Profile:
         self.no_of_posts = None
         self.no_of_followers = None
         self.no_of_following = None
+        self.web = None
         self.category = None
         self.status = None
         self.log = None

@@ -13,13 +13,13 @@ class DB:
     def insert_or_update_profile(self, profile : Profile):
         
         sql = """INSERT INTO profile (username, description, category, no_of_posts, no_of_followers, 
-        no_of_following, date_inserted, date_updated, status, log) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 
-        %s) ON DUPLICATE KEY UPDATE description=%s, category=%s, no_of_posts=%s, no_of_followers=%s, 
-        no_of_following=%s, date_updated=%s, status=%s, log=%s;"""
+        no_of_following, web, date_inserted, date_updated, status, log) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 
+        %s, %s) ON DUPLICATE KEY UPDATE description=%s, category=%s, no_of_posts=%s, no_of_followers=%s, 
+        no_of_following=%s, web=%s, date_updated=%s, status=%s, log=%s;"""
         args = (profile.username, profile.description, profile.category, profile.no_of_posts, 
-        profile.no_of_followers, profile.no_of_following, datetime.now(), datetime.now(), profile.status, 
+        profile.no_of_followers, profile.no_of_following, profile.web, datetime.now(), datetime.now(), profile.status, 
         profile.log, profile.description, profile.category, profile.no_of_posts, profile.no_of_followers, 
-        profile.no_of_following, datetime.now(), profile.status, profile.log, )
+        profile.no_of_following, profile.web, datetime.now(), profile.status, profile.log, )
         try:
             self.cur.execute(sql, args)
             logging.info(f"Profile {profile.username} added/updated to DB.")
