@@ -1,5 +1,8 @@
 from flask import Flask, json, request
 from InstagramScraper import InstagramScraper
+from includes.models import Profile
+from includes.DB import DB
+from config import *
 import logging
 logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %H:%M:%S', level=logging.INFO)
 
@@ -35,7 +38,7 @@ def grab_post():
         logging.error(str(e))
         return {"status": "error", "message": str(e)}, 300
 
-@api.route('/api/v1/scrape/reels/<username>')
+@api.route('/api/v1/scrape/reels/<username>', methods=['GET'])
 def grab_reels(username):
 
     try:
@@ -47,6 +50,26 @@ def grab_reels(username):
     except Exception as e:
         logging.error(str(e))
         return {"status": "error", "message": str(e)}, 300
+
+
+@api.route('/api/v1/scrape/find/profile', methods=['GET'])
+def find_profile():
+
+    if "name" in request.args:
+        field = "username"
+    elif "web" in request.args:
+        field = "web"
+    elif "url" in request.args:
+        field = "url"
+    else:
+        return {"status": "error", "message": "Please provide one of these parameters: name, web, url"}, 400
+    
+    db = DB(host=DB_HOST, username=DB_USER, password=DB_PASSWORD, db_name=DB_NAME)
+    db.cur.execute(f"SELECT username from profile where {field} like '%{request.args[field.replace('user', '')]}%';")
+    results = db.cur.fetchall()
+    if results:
+        return {"username": results[0][0]}
+    return {"message": "No profile matched."}, 404
 
 if __name__ == "__main__":
     api.run(host='0.0.0.0', port=80)
