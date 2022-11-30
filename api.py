@@ -2,6 +2,7 @@ from flask import Flask, json, request, Response
 from InstagramScraper import InstagramScraper
 from includes.models import Profile
 from includes.DB import DB
+from ast import literal_eval
 from config import *
 import logging, json
 logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %H:%M:%S', level=logging.INFO)
@@ -87,10 +88,13 @@ def get_posts():
         row['videos'] = [];
         
         if row['media_paths']:
-            print(row['media_paths'])
-            for media in json.loads(row['media_paths']):
-                print(media)
-                
+            for media in literal_eval(row['media_paths']):
+                parts = media.split('/')
+                if media.find( "/video/" ) != -1:
+                    row['videos'].append( parts[-1] )
+                else:
+                    row['images'].append( parts[-1] )
+                    
         rows[rowNbr] = row
     
     return Response(json.dumps(rows,default=str),  mimetype='application/json')
