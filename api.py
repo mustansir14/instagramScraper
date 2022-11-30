@@ -79,9 +79,11 @@ def get_posts():
         
     if "offset" not in request.args:
         return {"success": False, "errors": ["missing offset argument"]}
+
+    limit = 2
         
     db = DB(host=DB_HOST, username=DB_USER, password=DB_PASSWORD, db_name=DB_NAME)
-    rows = db.queryArray("SELECT * from post where username=%s order by id limit %d, 500",( request.args['id'], int( request.args['offset'] ), ))
+    rows = db.queryArray("SELECT * from post where username=%s order by id limit %d, %d",( request.args['id'], int( request.args['offset'] ),limit, ))
     
     for rowNbr, row in enumerate(rows):
         row['images'] = [];
