@@ -4,7 +4,7 @@ from includes.models import Profile
 from includes.DB import DB
 from ast import literal_eval
 from config import *
-import logging, json
+import logging, json, re, validators
 logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %H:%M:%S', level=logging.INFO)
 
 api = Flask(__name__)
@@ -53,26 +53,31 @@ def grab_reels(username):
         return {"status": "error", "message": str(e)}, 300
 
 
-@api.route('/api/v1/scrape/find/profile', methods=['GET'])
+@api.route('/v1/find/profile', methods=['GET'])
 def find_profile():
 
-    if "name" in request.args:
-        field = "username"
-    elif "web" in request.args:
-        field = "web"
-    elif "url" in request.args:
-        field = "url"
-    else:
-        return {"status": "error", "message": "Please provide one of these parameters: name, web, url"}, 400
-    
+    if not "url" in request.args:
+        return {"success": False, "errors": ["Please provide url"]}
+
+    url = request.args['url']
+
+    if not validators.url(url):
+        return {"success": False, "errors": ["Url not valid"]}
+
+    url = re.sub('\?*$', "", url)
+    url = url.strip("?/ \t\r\n")
+    url = url.split('/')
+    url = url[-1]
+        
     db = DB(host=DB_HOST, username=DB_USER, password=DB_PASSWORD, db_name=DB_NAME)
-    db.cur.execute(f"SELECT username from profile where {field} like '%{request.args[field.replace('user', '')]}%';")
+    db.cur.execute(f"SELECT username from profile where username = '{url}';")
     results = db.cur.fetchall()
     if results:
-        return {"username": results[0][0]}
-    return {"message": "No profile matched."}, 404
+        return { "success": True, "data": results[0][0]}
+
+    return { "success": False, "errors": [f"No profile id match: {url}"]}
     
-@api.route('/api/v1/scrape/get/posts', methods=['GET'])
+@api.route('/v1/get/posts', methods=['GET'])
 def get_posts():
     if "id" not in request.args:
         return {"success": False, "errors": ["missing id argument"]}
@@ -99,7 +104,7 @@ def get_posts():
                     
         rows[rowNbr] = row
     
-    return Response(json.dumps(rows,default=str),  mimetype='application/json')
+    return Response(json.dumps({'success': True, 'data': rows},default=str),  mimetype='application/json')
     
 
 if __name__ == "__main__":
