@@ -1,4 +1,4 @@
-from flask import Flask, json, request, Response
+from flask import Flask, json, request, Response, send_file
 from InstagramScraper import InstagramScraper
 from includes.models import Profile
 from includes.DB import DB
@@ -53,6 +53,24 @@ def grab_reels(username):
         return {"status": "error", "message": str(e)}, 300
 
 
+@api.route('/v1/get/image', methods=['GET'])
+def get_image():
+    if not "name" in request.args or not re.match('^[0-9a-zA-Z_]{1,}\.[a-z0-9]{3,4}$', request.args['name']):
+        return {"success": False, "errors": ["Please provide name"]}
+
+    filename = FILES_DIR.rstrip("/") + "/post/image/" + request.args['name']
+
+    return send_file(filename)
+
+@api.route('/v1/get/video', methods=['GET'])
+def get_video():
+    if not "name" in request.args or not re.match('^[0-9a-zA-Z_]{1,}\.[a-z0-9]{3,4}$', request.args['name']):
+        return {"success": False, "errors": ["Please provide name"]}
+
+    filename = FILES_DIR.rstrip("/") + "/post/video/" + request.args['name']
+
+    return send_file(filename)
+
 @api.route('/v1/find/profile', methods=['GET'])
 def find_profile():
 
@@ -62,7 +80,7 @@ def find_profile():
     url = request.args['url']
 
     if not validators.url(url):
-        return {"success": False, "errors": ["Url not valid"]}
+        return {"success": False, "errors": [f"Url '{url}' not valid"]}
 
     url = re.sub('\?*$', "", url)
     url = url.strip("?/ \t\r\n")
@@ -85,8 +103,13 @@ def get_posts():
     if "offset" not in request.args:
         return {"success": False, "errors": ["missing offset argument"]}
 
-    limit = 100
-        
+    if "limit" not in request.args:
+        return {"success": False, "errors": ["missing limit argument"]}
+
+    limit = int(request.args['limit'])
+    if limit > 500:
+        limit = 500
+            
     db = DB(host=DB_HOST, username=DB_USER, password=DB_PASSWORD, db_name=DB_NAME)
     rows = db.queryArray("SELECT * from post where username=%s order by id limit %d, %d",( request.args['id'], int( request.args['offset'] ),limit, ))
     
