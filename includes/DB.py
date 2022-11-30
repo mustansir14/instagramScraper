@@ -9,6 +9,16 @@ class DB:
 
         self.con = mariadb.connect(host=host, user=username, password=password, db=db_name)
         self.cur = self.con.cursor()
+        
+    def queryArray(self,sql,args):
+        cur = self.con.cursor(dictionary=True)
+        
+        cur.execute( sql, args )
+        rows = cur.fetchall()
+        
+        cur.close()
+
+        return rows
 
     def insert_or_update_profile(self, profile : Profile):
         

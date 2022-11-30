@@ -1,9 +1,9 @@
-from flask import Flask, json, request
+from flask import Flask, json, request, Response
 from InstagramScraper import InstagramScraper
 from includes.models import Profile
 from includes.DB import DB
 from config import *
-import logging
+import logging, json
 logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %H:%M:%S', level=logging.INFO)
 
 api = Flask(__name__)
@@ -70,6 +70,31 @@ def find_profile():
     if results:
         return {"username": results[0][0]}
     return {"message": "No profile matched."}, 404
+    
+@api.route('/api/v1/scrape/get/posts', methods=['GET'])
+def get_posts():
+    if "id" not in request.args:
+        return {"success": False, "errors": ["missing id argument"]}
+        
+    if "offset" not in request.args:
+        return {"success": False, "errors": ["missing offset argument"]}
+        
+    db = DB(host=DB_HOST, username=DB_USER, password=DB_PASSWORD, db_name=DB_NAME)
+    rows = db.queryArray("SELECT * from post where username=%s order by id limit %d, 500",( request.args['id'], int( request.args['offset'] ), ))
+    
+    for rowNbr, row in enumerate(rows):
+        row['images'] = [];
+        row['videos'] = [];
+        
+        if row['media_paths']:
+            print(row['media_paths'])
+            for media in json.loads(row['media_paths']):
+                print(media)
+                
+        rows[rowNbr] = row
+    
+    return Response(json.dumps(rows,default=str),  mimetype='application/json')
+    
 
 if __name__ == "__main__":
-    api.run(host='0.0.0.0', port=80)
+    api.run(host='0.0.0.0', port=3050)
