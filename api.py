@@ -9,7 +9,7 @@ logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %H:%M:%S
 
 api = Flask(__name__)
 
-@api.route('/api/v1/scrape/profile', methods=['GET'])
+@api.route('/v1/scrape/profile', methods=['GET'])
 def grab_company():
 
     if "id" not in request.args:
