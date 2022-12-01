@@ -4,3 +4,8 @@ file
 urls.txt
 venv
 config.server.py
+.idea
+*.bat
+jq.exe
+*.txt
+*.log
