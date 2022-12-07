@@ -26,16 +26,14 @@ class DB:
         no_of_following, web, date_inserted, date_updated, status, log) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 
         %s, %s) ON DUPLICATE KEY UPDATE description=%s, category=%s, no_of_posts=%s, no_of_followers=%s, 
         no_of_following=%s, web=%s, date_updated=%s, status=%s, log=%s;"""
+
         args = (profile.username, profile.description, profile.category, profile.no_of_posts, 
         profile.no_of_followers, profile.no_of_following, profile.web, datetime.now(), datetime.now(), profile.status, 
         profile.log, profile.description, profile.category, profile.no_of_posts, profile.no_of_followers, 
         profile.no_of_following, profile.web, datetime.now(), profile.status, profile.log, )
-        try:
-            self.cur.execute(sql, args)
-            logging.info(f"Profile {profile.username} added/updated to DB.")
-            self.con.commit()
-        except Exception as e:
-            logging.error(f"Error saving profile {profile.username} to DB. {str(e)}")
+
+        self.cur.execute(sql, args)
+        self.con.commit()
 
     def insert_or_update_post(self, post: Post):
 
@@ -43,14 +41,12 @@ class DB:
         date_inserted, date_updated, status, log) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
         %s) ON DUPLICATE KEY UPDATE username=%s, date_posted=%s, caption=%s, no_of_likes=%s, 
         is_video=%s, media_paths=%s, date_updated=%s, status=%s, log=%s;"""
+
         args = (post.id, post.username, post.date_posted, post.caption, post.no_of_likes, 
         post.is_video, str(post.media_paths), datetime.now(), datetime.now(), post.status, 
         post.log, post.username, post.date_posted, post.caption, post.no_of_likes, 
         post.is_video, str(post.media_paths), datetime.now(), post.status, post.log, )
-        try:
-            self.cur.execute(sql, args)
-            logging.info(f"Post {post.id} for profile: {post.username} added/updated to DB.")
-            self.con.commit()
-        except Exception as e:
-            logging.error(f"Error saving Post {post.id} for profile: {post.username} to DB. {str(e)}")
+
+        self.cur.execute(sql, args)
+        self.con.commit()
 

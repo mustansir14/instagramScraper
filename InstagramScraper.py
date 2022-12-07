@@ -8,7 +8,7 @@ from includes.DB import DB
 from config import *
 from datetime import datetime
 from multiprocessing import Process, Queue
-import sys
+import sys, traceback
 from sys import platform
 import argparse
 from includes.Reporter import Reporter
@@ -62,7 +62,14 @@ class InstagramScraper:
                 profile.log = str(response.status_code) + " Error requesting Instagram API: " + response.text
                 logging.error(profile.log)
                 return profile
-            user_json = response.json()["data"]["user"]
+            try:
+                json = response.json()
+            except Exception as e:
+                profile.status = "error"
+                profile.log = "JSON decode fail: " + str(e)
+                logging.error(profile.log)
+                return profile
+            user_json = json["data"]["user"]
             profile.username = username
             profile.description = user_json["biography"]
             profile.no_of_followers = user_json["edge_followed_by"]["count"]

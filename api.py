@@ -12,15 +12,17 @@ api = Flask(__name__)
 @api.route('/v1/scrape/profile', methods=['GET'])
 def grab_company():
 
-    if "id" not in request.args:
-        return {"success": False, "errors": ["missing id argument"]}
+    if "url" not in request.args:
+        return {"success": False, "errors": ["missing url argument"]}
     
     try:
         scraper = InstagramScraper()
-        profile = scraper.scrape_profile(request.args["id"])
+        profile = scraper.scrape_profile(request.args["url"])
         for i in range(len(profile.posts)):
             profile.posts[i] = vars(profile.posts[i])
-        return {"success": True, "data": vars(profile)}
+        if profile.status != "error":
+            return {"success": True, "data": vars(profile)}
+        return {"success": False, "errors": profile.log}
     except Exception as e:
         logging.error(str(e))
         return {"success": False, "errors": [str(e)]}
