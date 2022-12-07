@@ -22,7 +22,7 @@ def grab_company():
             profile.posts[i] = vars(profile.posts[i])
         if profile.status != "error":
             return {"success": True, "data": vars(profile)}
-        return {"success": False, "errors": profile.log}
+        return {"success": False, "errors": [profile.log]}
     except Exception as e:
         logging.error(str(e))
         return {"success": False, "errors": [str(e)]}
