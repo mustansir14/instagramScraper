@@ -11,6 +11,7 @@ from multiprocessing import Process, Queue
 import sys, traceback
 from sys import platform
 import argparse
+import random
 from includes.Reporter import Reporter
 logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %H:%M:%S', level=logging.INFO)
 
