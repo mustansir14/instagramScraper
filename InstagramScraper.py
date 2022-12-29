@@ -70,7 +70,7 @@ class InstagramScraper:
         profile = Profile()
         profile.username = username
         try:
-            proxy = get_proxy()
+            proxy = self.get_proxy()
             proxies = {
                 'http': f'socks5://{proxy}',
                 'https': f'socks5://{proxy}'
