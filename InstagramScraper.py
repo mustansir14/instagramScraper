@@ -38,6 +38,7 @@ class InstagramScraper:
             "x-ig-app-id": "936619743392459",
             "x-ig-www-claim": "0"
         }
+        self.proxies = None
 
         self.use_db = use_db
         if use_db:
@@ -47,6 +48,19 @@ class InstagramScraper:
         os.makedirs(FILES_DIR.rstrip("/") + "/post/video", exist_ok=True)
 
         self.reporter = Reporter(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_IDS)
+        
+    def get_proxy(self):
+        if not self.proxies:
+            r = requests.get('http://94.140.123.40:25000/', timeout=10)
+            lines = r.text.splitlines()
+            lines = map (lambda x: x.strip(), lines)
+            lines = list (filter(None, lines))
+            if not lines:
+                raise Exception("No proxies")
+            
+            self.proxies = lines
+            
+        return random.choice(self.proxies)  
 
     def scrape_profile(self, profile_url, get_only_reels=False) -> Profile:
 
@@ -56,12 +70,19 @@ class InstagramScraper:
         profile = Profile()
         profile.username = username
         try:
-            response = requests.get(self.url, headers=self.headers, params=querystring)
+            proxy = get_proxy()
+            proxies = {
+                'http': f'socks5://{proxy}',
+                'https': f'socks5://{proxy}'
+            }
+            response = requests.get(self.url, headers=self.headers, params=querystring, proxies=proxies)
+            
             if response.status_code != 200:
                 profile.status = "error"
                 profile.log = str(response.status_code) + " Error requesting Instagram API: " + response.text
                 logging.error(profile.log)
                 return profile
+                
             try:
                 json = response.json()
             except Exception as e:
@@ -69,6 +90,7 @@ class InstagramScraper:
                 profile.log = "JSON decode fail: " + str(e)
                 logging.error(profile.log)
                 return profile
+                
             user_json = json["data"]["user"]
             profile.username = username
             profile.description = user_json["biography"]
