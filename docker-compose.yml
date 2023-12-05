@@ -3,6 +3,9 @@ services:
     instagram_api:
         container_name: "instagram_api"
         restart: always
+        # Fix: use init or will be many chrome (defunct) which overflow process table and server freeze
+        # https://docs.docker.com/engine/reference/run/#specify-an-init-process
+        init: true
         build: .
         ports:
           - "3050:3050"
